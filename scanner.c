@@ -225,7 +225,7 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 	}
 	else if( strstr(class, "audioItem") )
 	{
-		snprintf(sql, sizeof(sql), "SELECT ALBUM, ARTIST, GENRE, ALBUM_ART from DETAILS where ID = %lld", (long long)detailID);
+		snprintf(sql, sizeof(sql), "SELECT ALBUM, ARTIST, GENRE, ALBUM_ART, DATE from DETAILS where ID = %lld", (long long)detailID);
 		ret = sql_get_table(db, sql, &result, &row, &cols);
 		if( ret != SQLITE_OK )
 			return;
@@ -234,8 +234,8 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 			sqlite3_free_table(result);
 			return;
 		}
-		char *album = result[4], *artist = result[5], *genre = result[6];
-		char *album_art = result[7];
+		char *album = result[5], *artist = result[6], *genre = result[7];
+		char *album_art = result[8], *date = result[9];
 		static struct virtual_item last_album;
 		static struct virtual_item last_artist;
 		static struct virtual_item last_artistAlbum;
@@ -258,6 +258,8 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 				insert_container(album, MUSIC_ALBUM_ID, NULL, "album.musicAlbum", artist, genre, album_art, &objectID, &parentID);
 				sprintf(last_album.parentID, MUSIC_ALBUM_ID"$%llX", (long long)parentID);
 				last_album.objectID = objectID;
+				sql_exec(db, "UPDATE details SET date = %Q WHERE id = (SELECT detail_id FROM objects WHERE object_id = %Q)", date, last_album.parentID);
+
 				//DEBUG DPRINTF(E_DEBUG, L_SCANNER, "Creating cached album item: %s/%s/%X\n", last_album.name, last_album.parentID, last_album.objectID);
 			}
 			sql_exec(db, "INSERT into OBJECTS"
