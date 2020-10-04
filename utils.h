@@ -104,6 +104,9 @@ unsigned int DJBHash(uint8_t *data, int len);
 int rename_artcache_dir(const char * oldpath, const char * newpath);
 #endif
 
+double normalize_to_sec(const char * hms_or_sec);
+int is_hms_format(const char * hms_or_sec);
+
 /* Timeval manipulations */
 void	timevaladd(struct timeval *t1, const struct timeval *t2);
 void	timevalsub(struct timeval *t1, const struct timeval *t2);
