@@ -261,6 +261,7 @@ GetSortCapabilities(struct upnphttp * h, const char * action)
 		"<u:%sResponse "
 		"xmlns:u=\"%s\">"
 		"<SortCaps>"
+		  "path,"
 		  "dc:title,"
 		  "dc:date,"
 		  "upnp:class,"
@@ -640,6 +641,11 @@ parse_sort_criteria(char *sortCriteria, int *error)
 		if( strcasecmp(item, "upnp:class") == 0 )
 		{
 			strcatf(&str, "o.CLASS");
+		}
+		else if( strcasecmp(item, "path") == 0 )
+		{
+			strcatf(&str, "d.PATH");
+			title_sorted = 1;
 		}
 		else if( strcasecmp(item, "dc:title") == 0 )
 		{
