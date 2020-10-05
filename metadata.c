@@ -654,6 +654,8 @@ GetVideoMetadata(const char *path, const char *name)
 	struct tm *modtime;
 	AVFormatContext *ctx = NULL;
 	AVStream *astream = NULL, *vstream = NULL;
+	AVStream *st = NULL;
+	AVDictionaryEntry *de = NULL;
 	int audio_stream = -1, video_stream = -1;
 	enum audio_profiles audio_profile = PROFILE_AUDIO_UNKNOWN;
 	char fourcc[4];
@@ -663,6 +665,7 @@ GetVideoMetadata(const char *path, const char *name)
 	metadata_t m;
 	uint32_t free_flags = 0xFFFFFFFF;
 	char *path_cpy, *basepath;
+	int found_thumbnail = 0;
 
 	memset(&m, '\0', sizeof(m));
 	memset(&video, '\0', sizeof(video));
@@ -683,20 +686,36 @@ GetVideoMetadata(const char *path, const char *name)
 	//dump_format(ctx, 0, NULL, 0);
 	for( i=0; i < ctx->nb_streams; i++)
 	{
-		if( lav_codec_type(ctx->streams[i]) == AVMEDIA_TYPE_AUDIO &&
-		    audio_stream == -1 )
+		st = ctx->streams[i];
+		switch( st->codec->codec_type )
 		{
-			audio_stream = i;
-			astream = ctx->streams[audio_stream];
-			continue;
-		}
-		else if( lav_codec_type(ctx->streams[i]) == AVMEDIA_TYPE_VIDEO &&
-		         !lav_is_thumbnail_stream(ctx->streams[i], &m.thumb_data, &m.thumb_size) &&
-		         video_stream == -1 )
-		{
-			video_stream = i;
-			vstream = ctx->streams[video_stream];
-			continue;
+			case AVMEDIA_TYPE_AUDIO:
+				if( audio_stream == -1 )
+				{
+					audio_stream = i;
+					astream = st;
+				}
+				break;
+			case AVMEDIA_TYPE_VIDEO:
+				if( !found_thumbnail &&
+				    lav_is_thumbnail_stream(st, &m.thumb_data, &m.thumb_size) )
+				{
+					de = av_dict_get(st->metadata, "filename", NULL, 0);
+					if( de && de->value )
+					{
+						if( is_album_art_filename(name, de->value) )
+							found_thumbnail = 1;
+					}
+					continue;
+				}
+				if( video_stream == -1 )
+				{
+					video_stream = i;
+					vstream = st;
+				}
+				break;
+			default:
+				break;
 		}
 	}
 	path_cpy = strdup(path);

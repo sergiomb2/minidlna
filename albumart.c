@@ -270,6 +270,31 @@ end_art:
 	return(art_path);
 }
 
+int
+is_album_art_filename(const char *name, const char *embedded_filename)
+{
+	char filename[NAME_MAX];
+	struct album_art_name_s *album_art_name;
+	int r = 0;
+
+	snprintf(filename, NAME_MAX, "%s.jpg", name);
+
+	if( !strcasecmp(embedded_filename, "cover.jpg") ||
+	    !strcasecmp(embedded_filename, "small_cover.jpg") ||
+	    !strcasecmp(embedded_filename, filename) )
+		r = 1;
+
+	for( album_art_name = album_art_names; !r && album_art_name; album_art_name = album_art_name->next )
+	{
+		snprintf(filename, NAME_MAX, "%s.jpg", album_art_name->name);
+		if( !strcasecmp(embedded_filename, filename) )
+			r = 1;
+	}
+	if( r )
+		DPRINTF(E_DEBUG, L_METADATA, "Found coverart filename '%s'\n", embedded_filename);
+	return r;
+}
+
 static char *
 check_for_album_file(const char *path)
 {
