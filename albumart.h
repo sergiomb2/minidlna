@@ -26,5 +26,6 @@
 
 void update_if_album_art(const char *path);
 int64_t find_album_art(const char *path, uint8_t *image_data, int image_size);
+int is_album_art_filename(const char *name, const char *embedded_filename);
 
 #endif
