@@ -383,10 +383,11 @@ AddClientCache(struct in_addr addr, int type)
 		clients[i].addr = addr;
 		clients[i].type = &client_types[type];
 		clients[i].age = time(NULL);
-		DPRINTF(E_DEBUG, L_HTTP, "Added client [%s/%s/%02X:%02X:%02X:%02X:%02X:%02X] to cache slot %d.\n",
-					client_types[type].name, inet_ntoa(clients[i].addr),
-					clients[i].mac[0], clients[i].mac[1], clients[i].mac[2],
-					clients[i].mac[3], clients[i].mac[4], clients[i].mac[5], i);
+		snprintf(clients[i].macstr, sizeof(clients[i].macstr), "%02x:%02x:%02x:%02x:%02x:%02x",
+			clients[i].mac[0], clients[i].mac[1], clients[i].mac[2], 
+			clients[i].mac[3], clients[i].mac[4], clients[i].mac[5]);
+		DPRINTF(E_DEBUG, L_HTTP, "Added client [%s/%s/%s] to cache slot %d.\n",
+			client_types[type].name, inet_ntoa(clients[i].addr), clients[i].macstr, i);
 		return &clients[i];
 	}
 

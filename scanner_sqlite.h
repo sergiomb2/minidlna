@@ -91,3 +91,10 @@ char create_settingsTable_sqlite[] = "CREATE TABLE SETTINGS ("
 					"KEY TEXT NOT NULL, "
 					"VALUE TEXT"
 					");";
+
+char create_historyTable_sqlite[] = "CREATE TABLE HISTORY ("
+					"DETAIL_ID INTEGER, "
+					"CLIENT_MAC TEXT, "
+					"ATIME INTEGER, "
+					"PRIMARY KEY (DETAIL_ID, CLIENT_MAC)"
+					");";
