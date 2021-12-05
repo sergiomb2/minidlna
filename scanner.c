@@ -225,7 +225,7 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 	}
 	else if( strstr(class, "audioItem") )
 	{
-		snprintf(sql, sizeof(sql), "SELECT ALBUM, ARTIST, GENRE, ALBUM_ART, DATE from DETAILS where ID = %lld", (long long)detailID);
+		snprintf(sql, sizeof(sql), "SELECT ALBUM, DISC, TOTAL_DISCS, ARTIST, GENRE, ALBUM_ART, DATE from DETAILS where ID = %lld", (long long)detailID);
 		ret = sql_get_table(db, sql, &result, &row, &cols);
 		if( ret != SQLITE_OK )
 			return;
@@ -234,16 +234,29 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 			sqlite3_free_table(result);
 			return;
 		}
-		char *album = result[5], *artist = result[6], *genre = result[7];
-		char *album_art = result[8], *date = result[9];
+		char *album = result[6], *disc = result[7], *total_discs = result[8], *artist = result[9], *genre = result[10];
+		char *album_art = result[11], *date = result[12];;
 		static struct virtual_item last_album;
+		static struct virtual_item last_disc;
 		static struct virtual_item last_artist;
 		static struct virtual_item last_artistAlbum;
+		static struct virtual_item last_artistAlbum_disc;
 		static struct virtual_item last_artistAlbumAll;
 		static struct virtual_item last_genre;
 		static struct virtual_item last_genreArtist;
 		static struct virtual_item last_genreArtistAll;
 		static long long last_all_objectID = 0;
+
+		int disc_number = 0;
+		if ( disc )
+		{
+			disc_number = atoi(disc);
+		}
+		int total_discs_number = 0;
+		if ( total_discs )
+		{
+			total_discs_number = atoi(total_discs);
+		}
 
 		if( album )
 		{
@@ -262,11 +275,36 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 
 				//DEBUG DPRINTF(E_DEBUG, L_SCANNER, "Creating cached album item: %s/%s/%X\n", last_album.name, last_album.parentID, last_album.objectID);
 			}
-			sql_exec(db, "INSERT into OBJECTS"
-			             " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
-			             "VALUES"
-			             " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
-			             last_album.parentID, last_album.objectID, last_album.parentID, refID, class, (long long)detailID, name);
+
+			if ( disc_number > 0 && total_discs_number > 1 )
+			{
+				if( valid_cache && strcmp(disc, last_disc.name) == 0 )
+				{
+					last_disc.objectID++;
+					//DEBUG DPRINTF(E_DEBUG, L_SCANNER, "Using last disc item: %s/%s/%X\n", last_disc.name, last_disc.parentID, last_disc.objectID);
+				}
+				else
+				{
+					sprintf(last_disc.name, "%s Disc %s", last_album.name, disc);
+					insert_container(last_disc.name, last_album.parentID, NULL, "storageVolume", artist, genre, album_art, &objectID, &parentID);
+					sprintf(last_disc.parentID, "%s$%llX", last_album.parentID, (long long)parentID);
+					last_disc.objectID = objectID;
+					//DEBUG DPRINTF(E_DEBUG, L_SCANNER, "Creating cached disc item: %s/%s/%X\n", last_disc.name, last_disc.parentID, last_disc.objectID);
+				}
+				sql_exec(db, "INSERT into OBJECTS"
+							 " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
+							 "VALUES"
+							 " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
+							 last_disc.parentID, last_disc.objectID, last_disc.parentID, refID, class, (long long)detailID, name);
+			}
+			else
+			{
+				sql_exec(db, "INSERT into OBJECTS"
+				             " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
+				             "VALUES"
+				             " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
+				             last_album.parentID, last_album.objectID, last_album.parentID, refID, class, (long long)detailID, name);
+			}
 		}
 		if( artist )
 		{
@@ -299,11 +337,34 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 				strncpyt(last_artistAlbum.name, album ? album : _("Unknown Album"), sizeof(last_artistAlbum.name));
 				//DEBUG DPRINTF(E_DEBUG, L_SCANNER, "Creating cached artist/album item: %s/%s/%X\n", last_artist.name, last_artist.parentID, last_artist.objectID);
 			}
-			sql_exec(db, "INSERT into OBJECTS"
-			             " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
-			             "VALUES"
-			             " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
-			             last_artistAlbum.parentID, last_artistAlbum.objectID, last_artistAlbum.parentID, refID, class, (long long)detailID, name);
+			if ( disc_number > 0 && total_discs_number > 1 )
+			{
+				if( valid_cache && strcmp(disc, last_artistAlbum_disc.name) == 0 )
+				{
+					last_artistAlbum_disc.objectID++;
+				}
+				else
+				{
+					sprintf(last_artistAlbum_disc.name, "%s Disc %s", last_artistAlbum.name, disc);
+					insert_container(last_artistAlbum_disc.name, last_artistAlbum.parentID, NULL, "storageVolume", artist, genre, album_art, &objectID, &parentID);
+					sprintf(last_artistAlbum_disc.parentID, "%s$%llX", last_artistAlbum.parentID, (long long)parentID);
+					last_artistAlbum_disc.objectID = objectID;
+				}
+				sql_exec(db, "INSERT into OBJECTS"
+							 " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
+							 "VALUES"
+							 " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
+							 last_artistAlbum_disc.parentID, last_artistAlbum_disc.objectID, last_artistAlbum_disc.parentID, refID, class, (long long)detailID, name);
+			}
+			else
+			{
+				sql_exec(db, "INSERT into OBJECTS"
+							 " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
+							 "VALUES"
+							 " ('%s$%llX', '%s', '%s', '%s', %lld, %Q)",
+							 last_artistAlbum.parentID, last_artistAlbum.objectID, last_artistAlbum.parentID, refID, class, (long long)detailID, name);
+			}
+
 			sql_exec(db, "INSERT into OBJECTS"
 			             " (OBJECT_ID, PARENT_ID, REF_ID, CLASS, DETAIL_ID, NAME) "
 			             "VALUES"
