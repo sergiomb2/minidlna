@@ -308,6 +308,13 @@ struct client_type_s client_types[] =
 	  EUserAgent
 	},
 
+	{ ENumericableLaBox,
+	  FLAG_DLNA | FLAG_CAPTION_RES,
+	  "Labox Numericable",
+	  "pvConnect DLNADOC/1.50",
+	  EUserAgent
+	},
+
 	{ EStandardDLNA150,
 	  FLAG_DLNA | FLAG_MIME_AVI_AVI,
 	  "Generic DLNA 1.5",

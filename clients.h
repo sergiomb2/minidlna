@@ -86,6 +86,7 @@ enum client_types {
 	EKodi,
 	EMovian,
 	EStandardDLNA150,
+	ENumericableLaBox,
 	EStandardUPnP
 };
 
