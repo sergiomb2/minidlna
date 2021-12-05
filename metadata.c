@@ -1438,7 +1438,7 @@ GetVideoMetadata(const char *path, const char *name)
 	}
 	#ifndef NETGEAR
 	#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
-	else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0 )
+	else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2,mkv,matroska,webm") == 0 )
 	{
 		if( ctx->metadata )
 		{
@@ -1493,7 +1493,7 @@ video_no_dlna:
 			xasprintf(&m.mime, "video/mpeg");
 		else if( strcmp(ctx->iformat->name, "asf") == 0 )
 			xasprintf(&m.mime, "video/x-ms-wmv");
-		else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0 )
+		else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2,webm") == 0 )
 			if( ends_with(path, ".mov") )
 				xasprintf(&m.mime, "video/quicktime");
 			else
