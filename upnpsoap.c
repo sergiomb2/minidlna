@@ -1267,6 +1267,9 @@ callback(void *args, int argc, char **argv, char **azColName)
 		if( artist && (passed_args->filter & FILTER_UPNP_ARTIST) ) {
 			ret = strcatf(str, "&lt;upnp:artist&gt;%s&lt;/upnp:artist&gt;", artist);
 		}
+		if( date ) {
+			ret = strcatf(str, "&lt;dc:date&gt;%s&lt;/dc:date&gt;", date);
+		}
 		if( NON_ZERO(album_art) && (passed_args->filter & FILTER_UPNP_ALBUMARTURI) ) {
 			ret = strcatf(str, "&lt;upnp:albumArtURI ");
 			if( passed_args->filter & FILTER_UPNP_ALBUMARTURI_DLNA_PROFILEID ) {
