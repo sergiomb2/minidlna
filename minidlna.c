@@ -677,6 +677,7 @@ init(int argc, char **argv)
 	runtime_vars.port = 8200;
 	runtime_vars.notify_interval = 895;	/* seconds between SSDP announces */
 	runtime_vars.max_connections = 50;
+	runtime_vars.nonlocal_iface = -1; /* don't respond to nonlocal queries */
 	runtime_vars.root_container = NULL;
 	runtime_vars.ifaces[0] = NULL;
 	runtime_vars.cover_size = 160; /* DLNA standart value */
@@ -1017,6 +1018,10 @@ init(int argc, char **argv)
 			else
 				DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
 			break;
+		case 'I':
+			/* Respond to nonlocal queries from first interface */
+			runtime_vars.nonlocal_iface = 0;
+			break;
 		case 'f':
 			i++;	/* discarding, the config file is already read */
 			break;
@@ -1093,9 +1098,9 @@ init(int argc, char **argv)
 			"\t\t[-t notify_interval] [-P pid_filename]\n"
 			"\t\t[-s serial] [-m model_number]\n"
 #if defined(__linux__) || defined(__APPLE__)
-			"\t\t[-w url] [-r] [-R] [-U] [-L] [-S] [-V] [-h]\n"
+			"\t\t[-w url] [-r] [-R] [-U] [-L] [-I] [-S] [-V] [-h]\n"
 #else
-			"\t\t[-w url] [-r] [-R] [-U] [-L] [-V] [-h]\n"
+			"\t\t[-w url] [-r] [-R] [-U] [-L] [-I] [-V] [-h]\n"
 #endif
 			"\nNotes:\n\tNotify interval is in seconds. Default is 895 seconds.\n"
 			"\tDefault pid file is %s.\n"
@@ -1108,6 +1113,7 @@ init(int argc, char **argv)
 			"\t-U forces a rescan while " SERVER_NAME " is running. Use after -P\n"
 			"\t-R forces a rebuild\n"
 			"\t-L do not create playlists\n"
+			"\t-I Enable responses to queries from remote networks\n"
 #if defined(__linux__) || defined(__APPLE__)
 			"\t-S changes behaviour for systemd/launchd\n"
 #endif
