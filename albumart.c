@@ -97,6 +97,113 @@ save_resized_album_art(image_s *imsrc, const char *path)
 	return cache_file;
 }
 
+static const char *sizepostfix[] = { "LRG", "MED", "SM", "" };
+static const int twidth[]  = { 4096, 1024, 640, 160 };
+static const int theight[] = { 4096,  768, 480, 160 };
+
+static char *
+album_art_path_size(const char *basename, const int index)
+{
+	char *ret = NULL;
+	int postfixlen = strlen(sizepostfix[index]);
+	xasprintf(&ret, "%s%s", basename, sizepostfix[index]);
+	snprintf(strchr(ret, '\0') - 4 - postfixlen, 5 + postfixlen, "%s.jpg", sizepostfix[index]);
+	return ret;
+}
+
+static char *
+save_album_art(image_s *imsrc, const char *path, uint8_t *image_data, int image_size)
+{
+	int width, height;
+	char *art_path = NULL;
+	char *art_path_pf = NULL;
+	char *link_from = NULL;
+	uint8_t *image_buf = image_data;
+	size_t nwritten;
+	char *cache_dir;
+	FILE *dstfile;
+
+	int sizeidx;
+
+	width = imsrc->width;
+	height = imsrc->height;
+	if ( width <= 0 || height <= 0) {
+		return NULL;
+	}
+
+	if( art_cache_exists(path, &art_path) )
+		return art_path;
+	cache_dir = strdup(art_path);
+	make_dir(dirname(cache_dir), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+	free(cache_dir);
+
+	if (image_data == NULL) {
+		link_from = strdup(path);
+	}
+
+	for(sizeidx = 0; sizeidx < 4; sizeidx++) {
+		art_path_pf = album_art_path_size(art_path, sizeidx);
+
+		if( width > twidth[sizeidx] || height > theight[sizeidx] ) {
+			if (save_resized_album_art(imsrc, art_path_pf, twidth[sizeidx], theight[sizeidx]) == NULL)
+				return NULL;
+			continue;
+		}
+
+		if (link_from != NULL) {
+			if (link(link_from, art_path_pf) == 0) {
+				free(art_path_pf);
+				continue;
+			}
+			struct stat statbuf;
+			FILE *srcfile;
+			int nread;
+
+			if (stat(path, &statbuf) != 0)
+				goto fail;
+			image_size = statbuf.st_size;
+
+			srcfile = fopen(path, "r");
+			if (!srcfile)
+				goto fail;
+			image_buf = malloc(image_size);
+			if (image_buf == NULL)
+				goto fail;
+			nread = fread((void *)image_data, 1, image_size, srcfile);
+			fclose(srcfile);
+			if ( nread != image_size )
+			{
+				DPRINTF(E_WARN, L_METADATA, "Embedded art error: read %lu/%d bytes\n",
+						(unsigned long)nread, image_size);
+				free(image_buf);
+				goto fail;
+			}
+		}
+
+		dstfile = fopen(art_path_pf, "w");
+		if( !dstfile )
+			goto fail;
+		nwritten = fwrite((void *)image_buf, 1, image_size, dstfile);
+		fclose(dstfile);
+		if( nwritten != image_size )
+		{
+			DPRINTF(E_WARN, L_METADATA, "Embedded art error: wrote %lu/%d bytes\n",
+					(unsigned long)nwritten, image_size);
+			remove(art_path_pf);
+			goto fail;
+		}
+		free(link_from);
+		link_from = art_path_pf;
+	}
+	free(link_from);
+	return art_path;
+fail:
+	free(art_path);
+	free(art_path_pf);
+	free(link_from);
+	return NULL;
+}
+
 /* And our main album art functions */
 void
 update_if_album_art(const char *path)
@@ -171,15 +278,14 @@ update_if_album_art(const char *path)
 char *
 check_embedded_art(const char *path, uint8_t *image_data, int image_size)
 {
-	int width = 0, height = 0;
 	char *art_path = NULL;
 	char *cache_dir;
-	FILE *dstfile;
 	image_s *imsrc;
 	static char last_path[PATH_MAX];
 	static unsigned int last_hash = 0;
 	static int last_success = 0;
 	unsigned int hash;
+        int sizeidx;
 
 	if( !image_data || !image_size || !path )
 	{
@@ -193,24 +299,38 @@ check_embedded_art(const char *path, uint8_t *image_data, int image_size)
 		if( !last_success )
 			return NULL;
 		art_cache_exists(path, &art_path);
-		if( link(last_path, art_path) == 0 )
-		{
-			return(art_path);
-		}
-		else
-		{
-			if( errno == ENOENT )
+		for (sizeidx = 0; sizeidx < 4; sizeidx++) {
+			char *art_path_pf = album_art_path_size(art_path, sizeidx);
+			char *last_path_pf = album_art_path_size(last_path, sizeidx);
+			if( link(last_path_pf, art_path_pf) == 0 )
 			{
-				cache_dir = strdup(art_path);
-				make_dir(dirname(cache_dir), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-				free(cache_dir);
-				if( link(last_path, art_path) == 0 )
-					return(art_path);
+				free(art_path_pf);;
+				free(last_path_pf);;
+				continue;
 			}
-			DPRINTF(E_WARN, L_METADATA, "Linking %s to %s failed [%s]\n", art_path, last_path, strerror(errno));
-			free(art_path);
-			art_path = NULL;
+			else
+			{
+				if( errno == ENOENT )
+				{
+					cache_dir = strdup(art_path);
+					make_dir(dirname(cache_dir), S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+					free(cache_dir);
+					if( link(last_path_pf, art_path_pf) == 0 ) {
+						free(art_path_pf);
+						free(last_path_pf);
+						continue;
+					}
+				}
+				DPRINTF(E_WARN, L_METADATA, "Linking %s to %s failed [%s]\n", art_path_pf, last_path_pf, strerror(errno));
+				free(art_path_pf);
+				free(art_path);
+				free(last_path_pf);
+				art_path = NULL;
+				break;
+			}
 		}
+		if (art_path)
+			return art_path;
 	}
 	last_hash = hash;
 
@@ -302,7 +422,6 @@ check_for_album_file(const char *path)
 	char mypath[MAXPATHLEN];
 	struct album_art_name_s *album_art_name;
 	image_s *imsrc = NULL;
-	int width=0, height=0;
 	char *art_file, *p;
 	const char *dir;
 	struct stat st;

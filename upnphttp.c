@@ -1629,6 +1629,10 @@ SendResp_albumArt(struct upnphttp * h, char * object)
 	int fd;
 	struct string_s str;
 
+        const char *sizepostfix[] = { "LRG", "MED", "SM", "TN" };
+        char *path_pf = NULL;
+        int sizeidx;
+
 	if( h->reqflags & (FLAG_XFERSTREAMING|FLAG_RANGE) )
 	{
 		DPRINTF(E_WARN, L_HTTP, "Client tried to specify transferMode as Streaming with an image!\n");
@@ -1645,18 +1649,29 @@ SendResp_albumArt(struct upnphttp * h, char * object)
 		Send404(h);
 		return;
 	}
-	DPRINTF(E_INFO, L_HTTP, "Serving album art ID: %lld [%s]\n", id, path);
+	for (sizeidx = 0; sizeidx < 3; sizeidx++) {
+		if (strstr(object, sizepostfix[sizeidx]) != NULL) {
+			int postfixlen = strlen(sizepostfix[sizeidx]);
+			xasprintf(&path_pf, "%s%s", path, sizepostfix[sizeidx]);
+			snprintf(strchr(path_pf, '\0') - 4 - postfixlen, 5 + postfixlen, "%s.jpg", sizepostfix[sizeidx]);
+			break;
+		}
+	}
+	if (path_pf == NULL)
+		path_pf = strdup(path);
+	sqlite3_free(path);
+	DPRINTF(E_INFO, L_HTTP, "Serving album art ID: %lld [%s]\n", id, path_pf);
 
-	fd = _open_file(path);
+	fd = _open_file(path_pf);
 	if( fd < 0 ) {
-		sqlite3_free(path);
+		free(path_pf);
 		if (fd == -403)
 			Send403(h);
 		else
 			Send404(h);
 		return;
 	}
-	sqlite3_free(path);
+	free(path_pf);
 	size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
@@ -1664,8 +1679,8 @@ SendResp_albumArt(struct upnphttp * h, char * object)
 
 	start_dlna_header(&str, 200, "Interactive", "image/jpeg");
 	strcatf(&str, "Content-Length: %jd\r\n"
-	              "contentFeatures.dlna.org: DLNA.ORG_PN=JPEG_TN\r\n\r\n",
-	              (intmax_t)size);
+		      "contentFeatures.dlna.org: DLNA.ORG_PN=JPEG_%s\r\n\r\n",
+		      (intmax_t)size, sizepostfix[sizeidx]);
 
 	if( send_data(h, str.data, str.off, MSG_MORE) == 0 )
 	{
