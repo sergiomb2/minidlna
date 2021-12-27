@@ -1238,12 +1238,30 @@ callback(void *args, int argc, char **argv, char **azColName)
 							   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
 				}
 			} else if( passed_args->filter & FILTER_UPNP_ALBUMARTURI ) {
-				ret = strcatf(str, "&lt;upnp:albumArtURI");
 				if( passed_args->filter & FILTER_UPNP_ALBUMARTURI_DLNA_PROFILEID ) {
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
+					ret = strcatf(str, " dlna:profileID=\"JPEG_LRG\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
+					ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s_LRG.jpg&lt;/upnp:albumArtURI&gt;",
+							lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
+					ret = strcatf(str, " dlna:profileID=\"JPEG_MED\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
+					ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s_MED.jpg&lt;/upnp:albumArtURI&gt;",
+							lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
+					ret = strcatf(str, " dlna:profileID=\"JPEG_SM\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
+					ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s_SM.jpg&lt;/upnp:albumArtURI&gt;",
+							lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
 					ret = strcatf(str, " dlna:profileID=\"JPEG_TN\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
+					ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
+							lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
 				}
-				ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
-				                   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+				else {
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
+					ret = strcatf(str, "&lt;upnp:albumArtURI");
+					ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
+							lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+				}
 			}
 		}
 		if( (passed_args->flags & FLAG_MS_PFS) && *mime == 'i' ) {
