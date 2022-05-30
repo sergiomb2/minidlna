@@ -347,6 +347,8 @@ mime_to_ext(const char * mime)
 				return "3gp";
 			else if( strcmp(mime, "application/ogg") == 0 )
 				return "ogg";
+			else if( strcmp(mime, "audio/ogg; codecs=opus") == 0 )
+        			return "opus";
 			else if( strcmp(mime+6, "x-dsd") == 0 )
 				return "dsd";
 			break;
@@ -401,6 +403,7 @@ is_video(const char * file)
 		ends_with(file, ".m2t") || ends_with(file, ".mkv")   ||
 		ends_with(file, ".vob") || ends_with(file, ".ts")    ||
 		ends_with(file, ".flv") || ends_with(file, ".xvid")  ||
+		ends_with(file, ".vdr") ||
 #ifdef TIVO_SUPPORT
 		ends_with(file, ".TiVo") ||
 #endif
@@ -418,6 +421,9 @@ is_audio(const char * file)
 		ends_with(file, ".m4a") || ends_with(file, ".aac")  ||
 		ends_with(file, ".mp4") || ends_with(file, ".m4p")  ||
 		ends_with(file, ".wav") || ends_with(file, ".ogg")  ||
+#ifdef HAVE_OPUS
+		ends_with(file, ".opus") ||
+#endif
 		ends_with(file, ".pcm") || ends_with(file, ".3gp")  ||
 		ends_with(file, ".dsf") || ends_with(file, ".dff"));
 }
