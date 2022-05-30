@@ -308,6 +308,11 @@ GetAudioMetadata(const char *path, const char *name)
 		strcpy(type, "ogg");
 		m.mime = strdup("audio/ogg");
 	}
+	else if ( ends_with(path, ".opus") )
+	{
+		strcpy(type,"ops");
+		m.mime = strdup("audio/ogg; codecs=opus");
+	}
 	else if( ends_with(path, ".pcm") )
 	{
 		strcpy(type, "pcm");
