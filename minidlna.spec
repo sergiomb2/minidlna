@@ -1,21 +1,22 @@
+# globals for minidlna-1.3.3-20230619-db8a2f2.tar.bz2
+%global gitdate 20230619
+%global gitversion db8a2f2
+%global shortcommit0 %(c=%{gitversion}; echo ${c:0:7})
+
 Name:           minidlna
 Version:        1.3.3
-Release:        1%{?dist}
+Release:        2%{?shortcommit0:.%{gitdate}git%{shortcommit0}}%{?dist}
 Summary:        Lightweight DLNA/UPnP-AV server targeted at embedded systems
 
 License:        GPLv2
 URL:            http://sourceforge.net/projects/minidlna/
 Source0:        http://downloads.sourceforge.net/%{name}/%{version}/%{name}-%{version}.tar.gz
-# Systemd unit file
-Source1:        %{name}.service
-# tmpfiles configuration for the /run directory
-Source2:        %{name}-tmpfiles.conf
-# Fix core dump
-# https://sourceforge.net/p/minidlna/bugs/333/
-Patch0:         %{name}-1.3.0-select_use_after_free.patch
+Patch1:         v1_3_3..%{shortcommit0}_multiple_captions_support.patch
 
 BuildRequires:  make
 BuildRequires:  gcc
+BuildRequires:  libtool
+BuildRequires:  gettext-devel
 BuildRequires:  avahi-devel
 BuildRequires:  libuuid-devel
 BuildRequires:  ffmpeg-devel
@@ -27,17 +28,19 @@ BuildRequires:  libjpeg-devel
 BuildRequires:  libexif-devel
 BuildRequires:  zlib-devel
 BuildRequires:  gettext
-BuildRequires:  systemd
+BuildRequires:  systemd-rpm-macros
+BuildRequires:  ffmpegthumbnailer-devel
+BuildRequires:  opusfile-devel
 Requires(pre):  shadow-utils
 %{?systemd_requires}
 
 %description
-MiniDLNA (aka ReadyDLNA) is server software with the aim of being fully 
+MiniDLNA (aka ReadyDLNA) is server software with the aim of being fully
 compliant with DLNA/UPnP-AV clients.
 
-The minidlna daemon serves media files (music, pictures, and video) to 
-clients on your network.  Example clients include applications such as 
-Totem and XBMC, and devices such as portable media players, smartphones, 
+The minidlna daemon serves media files (music, pictures, and video) to
+clients on your network.  Example clients include applications such as
+Totem and XBMC, and devices such as portable media players, smartphones,
 and televisions.
 
 
@@ -50,11 +53,13 @@ sed -i 's/#log_dir=\/var\/log/#log_dir=\/var\/log\/minidlna/' \
 
 
 %build
+./autogen.sh
 %configure \
   --disable-silent-rules \
   --with-db-path=%{_localstatedir}/cache/%{name} \
   --with-log-path=%{_localstatedir}/log/%{name} \
-  --enable-tivo
+  --enable-tivo \
+  --enable-thumbnail \
 
 %make_build
 
@@ -68,17 +73,11 @@ install -p -m 644 minidlna.conf %{buildroot}%{_sysconfdir}/
 
 # Install systemd unit file
 mkdir -p %{buildroot}%{_unitdir}/
-install -p -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/
-
-# Install man pages
-mkdir -p %{buildroot}%{_mandir}/man5/
-install -p -m 644 minidlna.conf.5 %{buildroot}%{_mandir}/man5/
-mkdir -p %{buildroot}%{_mandir}/man8/
-install -p -m 644 minidlnad.8 %{buildroot}%{_mandir}/man8/
+install -p -m 644 minidlna.service %{buildroot}%{_unitdir}/
 
 # Install tmpfiles configuration
 mkdir -p %{buildroot}%{_tmpfilesdir}/
-install -p -m 644 %{SOURCE2} %{buildroot}%{_tmpfilesdir}/%{name}.conf
+install -p -m 644 minidlna-tmpfiles.conf %{buildroot}%{_tmpfilesdir}/%{name}.conf
 mkdir -p %{buildroot}/run/
 install -d -m 755 %{buildroot}/run/%{name}/
 
