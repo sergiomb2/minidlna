@@ -989,6 +989,7 @@ init(int argc, char **argv)
 			break;
 		case 'd':
 			debug_flag = 1;
+			break;
 		case 'v':
 			verbose_flag = 1;
 			break;
