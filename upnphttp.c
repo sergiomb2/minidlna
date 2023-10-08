@@ -71,6 +71,7 @@
 #include "minidlnapath.h"
 #include "upnpsoap.h"
 #include "upnpevents.h"
+#include "captions.h"
 #include "utils.h"
 #include "getifaddr.h"
 #include "image_utils.h"
@@ -1563,7 +1564,7 @@ SendResp_caption(struct upnphttp * h, char * object)
 
 	id = strtoll(object, NULL, 10);
 
-	path = sql_get_text_field(db, "SELECT PATH from CAPTIONS where ID = %lld", id);
+	path = get_caption(id);
 	if( !path )
 	{
 		DPRINTF(E_WARN, L_HTTP, "CAPTION ID %s not found, responding ERROR 404\n", object);
@@ -2101,7 +2102,7 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 
 	if( h->reqflags & FLAG_CAPTION )
 	{
-		if( sql_get_int_field(db, "SELECT ID from CAPTIONS where ID = '%lld'", (long long)id) > 0 )
+		if (has_caption_with_id(id) > 0)
 			strcatf(&str, "CaptionInfo.sec: http://%s:%d/Captions/%lld.srt\r\n",
 			              lan_addr[h->iface].str, runtime_vars.port, (long long)id);
 	}

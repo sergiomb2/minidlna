@@ -38,6 +38,7 @@
 #include "sql.h"
 #include "scanner.h"
 #include "metadata.h"
+#include "captions.h"
 #include "albumart.h"
 #include "playlist.h"
 #include "log.h"
@@ -55,10 +56,8 @@ monitor_remove_file(const char * path)
 	int64_t detailID;
 	int rows, playlist;
 
-	if( is_caption(path) )
-	{
-		return sql_exec(db, "DELETE from CAPTIONS where PATH = '%q'", path);
-	}
+	if (is_caption(path)) return delete_caption(path);
+
 	/* Invalidate the scanner cache so we don't insert files into non-existent containers */
 	valid_cache = 0;
 	playlist = is_playlist(path);
@@ -164,7 +163,7 @@ monitor_insert_file(const char *name, const char *path)
 	if (mtype == TYPE_IMAGE)
 		update_if_album_art(path);
 	else if (mtype == TYPE_CAPTION)
-		check_for_captions(path, 0);
+		add_caption_if_has_media(path);
 	else if (mtype == TYPE_PLAYLIST)
 		tbl = "PLAYLISTS";
 	else if (mtype == TYPE_NFO)
