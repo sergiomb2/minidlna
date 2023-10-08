@@ -31,3 +31,9 @@ Prerequisites
 
 
 Justin Maggard
+
+Features
+==================
+
+- support scanning multiple captions for a media (use language suffix .ENG, .HUN, etc.)
+  export all captions and support selection

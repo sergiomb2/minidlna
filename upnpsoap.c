@@ -68,6 +68,7 @@
 #include "upnpsoap.h"
 #include "containers.h"
 #include "upnpreplyparse.h"
+#include "captions.h"
 #include "getifaddr.h"
 #include "scanner.h"
 #include "sql.h"
@@ -895,6 +896,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 		/* We may need special handling for certain MIME types */
 		if( *mime == 'v' )
 		{
+			passed_args->flags &= ~FLAG_HAS_CAPTIONS; // clear the caption flag for each item
 			dlna_flags |= DLNA_FLAG_TM_S;
 			if (GETFLAG(SUBTITLES_MASK) &&
 			    (passed_args->client >= EStandardDLNA150 || !passed_args->client))
@@ -935,7 +937,8 @@ callback(void *args, int argc, char **argv, char **azColName)
 			if( (passed_args->flags & FLAG_CAPTION_RES) ||
 			    (passed_args->filter & (FILTER_SEC_CAPTION_INFO_EX|FILTER_PV_SUBTITLE)) )
 			{
-				if( sql_get_int_field(db, "SELECT ID from CAPTIONS where ID = '%s'", detailID) > 0 )
+				int64_t id = strtoll(detailID, NULL, 10);
+				if (has_caption_with_id(id) > 0)
 					passed_args->flags |= FLAG_HAS_CAPTIONS;
 			}
 			/* From what I read, Samsung TV's expect a [wrong] MIME type of x-mkv. */
@@ -1180,11 +1183,16 @@ callback(void *args, int argc, char **argv, char **azColName)
 				default:
 					if( passed_args->flags & FLAG_HAS_CAPTIONS )
 					{
-						if( passed_args->flags & FLAG_CAPTION_RES )
+						if( passed_args->flags & FLAG_CAPTION_RES ) {
+							int64_t id = strtoll(detailID, NULL, 10);
+							int n = has_caption_with_id(id);
+							for (int i = 0; i < n; i++) {
 							ret = strcatf(str, "&lt;res protocolInfo=\"http-get:*:text/srt:*\"&gt;"
-									     "http://%s:%d/Captions/%s.srt"
+									     "http://%s:%d/Captions/%s.%d.srt"
 									   "&lt;/res&gt;",
-									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID, i);
+							}
+						}
 						if( passed_args->filter & FILTER_SEC_CAPTION_INFO_EX )
 							ret = strcatf(str, "&lt;sec:CaptionInfoEx sec:type=\"srt\"&gt;"
 							                     "http://%s:%d/Captions/%s.srt"
