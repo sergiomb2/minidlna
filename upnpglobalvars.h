@@ -213,6 +213,8 @@ extern uint32_t runtime_flags;
 #define THUMB_FILMSTRIP       0x2000
 #endif
 
+#define MONITOR_MASK          0x4000
+
 #define SETFLAG(mask)	runtime_flags |= mask
 #define GETFLAG(mask)	(runtime_flags & mask)
 #define CLEARFLAG(mask)	runtime_flags &= ~mask

@@ -24,7 +24,13 @@ But there may be times when you need to temporarily alter some of these options,
 you can do this by running minidlna with the following command line switches.
 .fi
 
-.IP "\fB\-R\fR \fIRescan\fR"
+.IP "\fB\-U\fR \fINon-destructive rescan\fR"
+Forces a non-destructive rescan while minidlnad is running. Use after -P
+
+.IP "\fB\-r\fR \fIRescan\fR"
+This forces a non-destructive rescan on startup.
+
+.IP "\fB\-R\fR \fIRebuild\fR"
 This forces minidlna to rescan all of the media_dir directories.
 
 .IP "\fB\-f\fR \fIconfig_file\fR"
@@ -38,6 +44,9 @@ Change the default presentation url address.
 
 .IP "\fB\-d\fR \fIdebug\fR"
 minidlna will run in the foreground with debug output.
+
+.IP "\fB\-v\fR \fIverbose\fR"
+Enables verbose output.
 
 .IP "\fB\-P\fR \fIpid_filename\fR"
 Specify a location for the PID file.

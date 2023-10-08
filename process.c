@@ -180,7 +180,7 @@ process_check_if_running(const char *fname)
 {
 	char buffer[64];
 	int pidfile;
-	pid_t pid;
+	pid_t pid = 0;
 
 	if(!fname || *fname == '\0')
 		return -1;
@@ -194,7 +194,7 @@ process_check_if_running(const char *fname)
 	{
 		if( (pid = atol(buffer)) > 0)
 		{
-			if(!kill(pid, 0))
+			if(kill(pid, 0) < 0)
 			{
 				close(pidfile);
 				return -2;
@@ -204,7 +204,7 @@ process_check_if_running(const char *fname)
 
 	close(pidfile);
 
-	return 0;
+	return (int) pid;
 }
 
 void

@@ -211,6 +211,17 @@ sigusr1(int sig)
 }
 
 static void
+sigusr2(int sig)
+{
+	signal(sig, sigusr2);
+	DPRINTF(E_WARN, L_GENERAL, "received signal %d, manual rescan\n", sig);
+
+	if (!GETFLAG(SCANNING_MASK) &&
+	    !GETFLAG(RESCAN_MASK))
+		SETFLAG(RESCAN_MASK);
+}
+
+static void
 sighup(int sig)
 {
 	signal(sig, sighup);
@@ -978,6 +989,7 @@ init(int argc, char **argv)
 			break;
 		case 'd':
 			debug_flag = 1;
+			break;
 		case 'v':
 			verbose_flag = 1;
 			break;
@@ -1018,6 +1030,10 @@ init(int argc, char **argv)
 			if (clean_cache() != 0)
 				DPRINTF(E_FATAL, L_GENERAL, "Failed to clean old file cache %s. EXITING\n", db_path);
 			break;
+		case 'U':
+			pid = process_check_if_running(pidfilename);
+			printf("Manual rescan for " SERVER_NAME " %s\n", (pid > 0 && !kill(pid, SIGUSR2)) ? "sent" : "failed");
+			exit(0);
 		case 'u':
 			if (i+1 != argc)
 			{
@@ -1076,18 +1092,20 @@ init(int argc, char **argv)
 			"\t\t[-i network_interface] [-u uid_to_run_as] [-g group_to_run_as]\n"
 			"\t\t[-t notify_interval] [-P pid_filename]\n"
 			"\t\t[-s serial] [-m model_number]\n"
-#ifdef __linux__
-			"\t\t[-w url] [-r] [-R] [-L] [-S] [-V] [-h]\n"
+#if defined(__linux__) || defined(__APPLE__)
+			"\t\t[-w url] [-r] [-R] [-U] [-L] [-S] [-V] [-h]\n"
 #else
-			"\t\t[-w url] [-r] [-R] [-L] [-V] [-h]\n"
+			"\t\t[-w url] [-r] [-R] [-U] [-L] [-V] [-h]\n"
 #endif
 			"\nNotes:\n\tNotify interval is in seconds. Default is 895 seconds.\n"
 			"\tDefault pid file is %s.\n"
-			"\tWith -d minidlna will run in debug mode (not daemonize).\n"
+			"\tWith:\n"
+			"\t-d minidlna will run in debug mode (not daemonize).\n"
 			"\t-w sets the presentation url. Default is http address on port 80\n"
 			"\t-v enables verbose output\n"
 			"\t-h displays this text\n"
-			"\t-r forces a rescan\n"
+			"\t-r forces a rescan on startup\n"
+			"\t-U forces a rescan while " SERVER_NAME " is running. Use after -P\n"
 			"\t-R forces a rebuild\n"
 			"\t-L do not create playlists\n"
 #if defined(__linux__) || defined(__APPLE__)
@@ -1129,7 +1147,7 @@ init(int argc, char **argv)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to open log file '%s/" LOGFILE_NAME "': %s\n",
 			log_path, strerror(errno));
 
-	if (process_check_if_running(pidfilename) < 0)
+	if (process_check_if_running(pidfilename) > 0)
 		DPRINTF(E_FATAL, L_GENERAL, SERVER_NAME " is already running. EXITING.\n");
 
 	set_startup_time();
@@ -1154,6 +1172,7 @@ init(int argc, char **argv)
 	if (signal(SIGUSR2, SIG_IGN) == SIG_ERR)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", "SIGUSR2");
 	signal(SIGUSR1, &sigusr1);
+	signal(SIGUSR2, &sigusr2);
 	sa.sa_handler = process_handle_child_termination;
 	if (sigaction(SIGCHLD, &sa, NULL))
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", "SIGCHLD");
@@ -1377,6 +1396,7 @@ main(int argc, char **argv)
 			if (kill(scanner_pid, 0) != 0) {
 				DPRINTF(E_INFO, L_GENERAL, "Scanner exited\n");
 				CLEARFLAG(SCANNING_MASK);
+				CLEARFLAG(RESCAN_MASK);
 				if (_get_dbtime() != lastdbtime)
 					updateID++;
 #ifdef HAVE_WATCH
@@ -1385,6 +1405,13 @@ main(int argc, char **argv)
 			} else
 				/* Keep checking for the scanner every sec. */
 				tv.tv_sec = 1;
+		}
+		if (GETFLAG(RESCAN_MASK) && !GETFLAG(SCANNING_MASK))
+		{
+			if (GETFLAG(MONITOR_MASK))
+				DPRINTF(E_WARN, L_GENERAL, "Waiting for inotify to finish.\n");
+			else
+				check_db(db, -1, &scanner_pid);
 		}
 
 		event_module.process(&tv);
