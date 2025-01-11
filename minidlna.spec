@@ -1,11 +1,11 @@
-# globals for minidlna-1.3.3-20230619-db8a2f2.tar.bz2
-%global gitdate 20230619
-%global gitversion db8a2f2
+# globals for minidlna-1.3.3-20250111-fae2b16.tar.bz2
+%global gitdate 20250111
+%global gitversion fae2b16
 %global shortcommit0 %(c=%{gitversion}; echo ${c:0:7})
 
 Name:           minidlna
 Version:        1.3.3
-Release:        2%{?shortcommit0:.%{gitdate}git%{shortcommit0}}%{?dist}
+Release:        14%{?shortcommit0:.%{gitdate}git%{shortcommit0}}%{?dist}
 Summary:        Lightweight DLNA/UPnP-AV server targeted at embedded systems
 
 License:        GPLv2
@@ -125,6 +125,9 @@ exit 0
 
 
 %changelog
+* Sat Jan 11 2025 Sérgio Basto <sergio@serjux.com> - 1.3.3-14
+- include ffmpeg patch
+
 * Sun Jun 18 2023 Sérgio Basto <sergio@serjux.com> - 1.3.3-1
 - Update minidlna to 1.3.3
 
