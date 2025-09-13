@@ -274,11 +274,6 @@ ParseHttpHeaders(struct upnphttp * h)
 				p = colon + 1;
 				while(isspace(*p))
 					p++;
-				n = 0;
-				while(p[n] >= ' ')
-					n++;
-				h->req_Host = p;
-				h->req_HostLen = n;
 				for(n = 0; n < n_lan_addr; n++)
 				{
 					for(i = 0; lan_addr[n].str[i]; i++)
@@ -987,32 +982,6 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 	}
 
 	DPRINTF(E_DEBUG, L_HTTP, "HTTP REQUEST: %.*s\n", h->req_buflen, h->req_buf);
-	if(h->req_Host && h->req_HostLen > 0) {
-		const char *port = memchr(h->req_Host, ':', h->req_HostLen);
-		size_t ip_sz = port ? (port - h->req_Host) : h->req_HostLen;
-		struct in_addr addr;
-		char ip_buf[16];
-		DPRINTF(E_MAXDEBUG, L_HTTP, "Host: %.*s\n", h->req_HostLen, h->req_Host);
-		if (port) {
-			const char *ptr = port + 1;
-			for (i = ip_sz + 2; i < h->req_HostLen; i++) {
-				if (*ptr > '9' || *ptr < '0')
-					break;
-				ptr++;
-			}
-			if (i != h->req_HostLen || atoi(port + 1) > 65535) {
-				DPRINTF(E_ERROR, L_HTTP, "DNS rebinding attack suspected (Host: %.*s)\n", h->req_HostLen, h->req_Host);
-				Send400(h);
-				return;
-			}
-		}
-		strncpyt(ip_buf, h->req_Host, MIN(ip_sz + 1, sizeof(ip_buf)));
-		if (ip_sz >= sizeof(ip_buf) || inet_pton(AF_INET, ip_buf, &addr) <= 0 || !addr.s_addr) {
-			DPRINTF(E_ERROR, L_HTTP, "DNS rebinding attack suspected (Host: %.*s)\n", h->req_HostLen, h->req_Host);
-			Send400(h);
-			return;
-		}
-	}
 	if(strcmp("POST", HttpCommand) == 0)
 	{
 		h->req_command = EPost;
