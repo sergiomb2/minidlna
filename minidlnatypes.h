@@ -50,6 +50,7 @@ struct runtime_vars_s {
 	int notify_interval;	/* seconds between SSDP announces */
 	int max_connections;	/* max number of simultaneous conenctions */
 	int nonlocal_iface;	/* iface to use respond to nonlocal queries */
+	int cover_size; /* max cover width or height */
 	const char *root_container;	/* root ObjectID (instead of "0") */
 	const char *ifaces[MAX_LAN_ADDR];	/* list of configured network interfaces */
 	int cover_size; /* max cover width or height */
