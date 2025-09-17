@@ -143,14 +143,14 @@ add_caption_if_has_media(const char *path)
 int
 has_caption_with_id(int64_t ID)
 {
-	int id = sql_get_int_field(db, "SELECT MEDIA_ID from CAPTIONS where MEDIA_ID = '%lld'", ID);
-	return id > 0 ? 1 : 0;
+	int id = sql_get_int_field(db, "SELECT count(*) from CAPTIONS where MEDIA_ID = '%lld'", ID);
+	return id;
 }
 
 char*
-get_caption(int64_t ID)
+get_caption(int64_t ID, int index)
 {
-	return sql_get_text_field(db, "SELECT PATH from CAPTIONS where MEDIA_ID = %lld ORDER BY DEFAULT_ITEM DESC LIMIT 1", ID);
+	return sql_get_text_field(db, "SELECT PATH FROM CAPTIONS WHERE MEDIA_ID = %lld ORDER BY DEFAULT_ITEM DESC LIMIT 1 OFFSET %d", ID, index);
 }
 
 int

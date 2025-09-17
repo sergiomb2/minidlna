@@ -1602,10 +1602,16 @@ SendResp_caption(struct upnphttp * h, char * object)
 	long long id;
 	int fd;
 	struct string_s str;
+	int index = 0;
+	char *endptr;
 
-	id = strtoll(object, NULL, 10);
+	id = strtoll(object, &endptr, 10);
 
-	path = get_caption(id);
+	if (*endptr == '.') {
+		index = strtol(endptr + 1, NULL, 10);
+	}
+
+	path = get_caption(id, index);
 	if( !path )
 	{
 		DPRINTF(E_WARN, L_HTTP, "CAPTION ID %s not found, responding ERROR 404\n", object);
@@ -2143,9 +2149,12 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 
 	if( h->reqflags & FLAG_CAPTION )
 	{
-		if (has_caption_with_id(id) > 0)
-			strcatf(&str, "CaptionInfo.sec: http://%s:%d/Captions/%lld.srt\r\n",
-			              lan_addr[h->iface].str, runtime_vars.port, (long long)id);
+        int n = has_caption_with_id(id);
+        for (int i = 0; i < n; i++) {
+            strcatf(&str, "CaptionInfo.sec: http://%s:%d/Captions/%lld.%d.srt\r\n",
+                    lan_addr[h->iface].str, runtime_vars.port, (long long)id, i);
+        }
+
 	}
 
 	strcatf(&str, "Accept-Ranges: bytes\r\n"

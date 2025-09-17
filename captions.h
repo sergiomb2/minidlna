@@ -34,7 +34,7 @@ int
 has_caption_with_id(int64_t ID);
 
 char*
-get_caption(int64_t ID);
+get_caption(int64_t ID, int index);
 
 int
 delete_caption(const char *path);

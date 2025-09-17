@@ -1183,11 +1183,16 @@ callback(void *args, int argc, char **argv, char **azColName)
 				default:
 					if( passed_args->flags & FLAG_HAS_CAPTIONS )
 					{
-						if( passed_args->flags & FLAG_CAPTION_RES )
+						if( passed_args->flags & FLAG_CAPTION_RES ) {
+							int64_t id = strtoll(detailID, NULL, 10);
+							int n = has_caption_with_id(id);
+							for (int i = 0; i < n; i++) {
 							ret = strcatf(str, "&lt;res protocolInfo=\"http-get:*:text/srt:*\"&gt;"
-									     "http://%s:%d/Captions/%s.srt"
+									     "http://%s:%d/Captions/%s.%d.srt"
 									   "&lt;/res&gt;",
-									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID, i);
+							}
+						}
 						if( passed_args->filter & FILTER_SEC_CAPTION_INFO_EX )
 							ret = strcatf(str, "&lt;sec:CaptionInfoEx sec:type=\"srt\"&gt;"
 							                     "http://%s:%d/Captions/%s.srt"
