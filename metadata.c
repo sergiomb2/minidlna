@@ -1409,6 +1409,8 @@ GetVideoMetadata(const char *path, const char *name)
 		}
 	}
 
+video_no_dlna:
+
 	if( strcmp(ctx->iformat->name, "asf") == 0 )
 	{
 		if( readtags((char *)path, &video, &file, "en_US", "asf") == 0 )
@@ -1443,7 +1445,7 @@ GetVideoMetadata(const char *path, const char *name)
 	}
 	#ifndef NETGEAR
 	#if LIBAVFORMAT_VERSION_INT >= ((52<<16)+(31<<8)+0)
-	else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0 )
+	else if( strcmp(ctx->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0 || strcmp(ctx->iformat->name, "matroska,webm") == 0 )
 	{
 		if( ctx->metadata )
 		{
@@ -1466,7 +1468,6 @@ GetVideoMetadata(const char *path, const char *name)
 	}
 	#endif
 	#endif
-video_no_dlna:
 
 #ifdef TIVO_SUPPORT
 	if( ends_with(path, ".TiVo") && is_tivo_file(path) )
